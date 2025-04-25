@@ -1,4 +1,5 @@
 import java.util.Scanner;
+
 public class Main { public static void main(String[] args) { System.out.println("Введите первое число");
     int firstNumber = new Scanner(System.in).nextInt();
     System.out.println("Введите второе число");
@@ -14,5 +15,6 @@ public class Main { public static void main(String[] args) { System.out.println(
         System.out.println("Частное: " + div);}
     else {
         System.out.println("Частное: " + (int)div);}
+
 }
 }
