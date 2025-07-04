@@ -1,0 +1,104 @@
+Здесь был реализован поиск последних кавычек и последних скобок в них,
+оказалось что бот может быть не только в последних скобках, но и в предпоследних,
+поэтому пришлось всё переделать, а этот останется для примера на всякий случай.
+
+Также тут сохранился функционал подсчета строк, который был выпилен из основного кода чтобы не мозолил глаза.
+
+import Exceptions.InvalidLogFormatException;
+import Exceptions.LineTooLongException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class WrongProcessFile {
+    private static int googleBotCount = 0;
+    private static int yandexBotCount = 0;
+    private static int totalLines = 0;
+    //   int maxLength = 0;
+    //   int minLength = Integer.MAX_VALUE;
+
+    public static void processFile(String path) throws IOException, LineTooLongException, InvalidLogFormatException {
+        try (FileReader fileReader = new FileReader(path);
+             BufferedReader reader = new BufferedReader(fileReader)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                totalLines++;
+                int length = line.length();
+                try {
+                    String botName;
+                    if (line.matches("(?i).*(YandexBot|Googlebot).*")) {
+                    /* Проверяет "yandexbot", "YANDEXBOT", "GoogleBot" и т.д.
+                    (?i) — игнорирует регистр.
+                    .* — любое количество символов до и после. */
+
+                        // Находим позиции кавычек
+                        int lastQuote = line.lastIndexOf('"');
+                        int prevQuote = line.lastIndexOf('"', lastQuote - 1);
+
+                        // Проверяем, что кавычки найдены и их достаточно
+                        if (lastQuote == -1 || prevQuote == -1 || lastQuote == prevQuote) {
+                            throw new InvalidLogFormatException("Предупреждение: (строка " + totalLines + "): " + "В строке что-то не так с кавычками");
+                        }
+
+                        String contentInLastQuotes = line.substring(prevQuote + 1, lastQuote); // Извлекаем содержимое между предпоследней и последней кавычками
+
+                        int startBrackets = contentInLastQuotes.lastIndexOf('(');  // Находим последнюю открывающую скобку
+                        int endBrackets = contentInLastQuotes.indexOf(')', startBrackets); // Находим последнюю закрывающую скобку ПОСЛЕ последней открывающей
+                        if (startBrackets == -1 || endBrackets == -1) {
+                            throw new InvalidLogFormatException("Предупреждение: (строка " + totalLines + "): " + "В строке есть имя бота, но отсутствуют скобки");
+                        }
+
+                        // Извлекаем текст в скобках
+                        String contentInBrackets = contentInLastQuotes.substring(startBrackets + 1, endBrackets);
+
+                        // Разбиваем по ';' и берём второй фрагмент
+                        String[] parts = contentInBrackets.split(";");
+                        String botName;
+                        if (parts.length >= 2) {
+                            String botInfo = parts[1].trim(); // .trim() удаляет пробелы в начале и конце
+
+                            botName = botInfo.split("[/\\s]")[0];
+                            /* Разбивает строку по:
+                               /  - (слэш)
+                               \s - (любой пробельный символ: пробел, табуляция и т.д.)
+                               \\ - экранирование обратного слэша в Java
+                              [0] - берёт первый элемент полученного массива */
+                        } else {
+                            throw new IllegalArgumentException("Предупреждение: (строка " + totalLines + "): " + "Неверный формат User-Agent: отсутствует ';' в скобках");
+                        }
+                    }
+                } catch (InvalidLogFormatException e) {
+                    System.err.println("Ошибка формата: " + e.getMessage());
+                    continue; // Продолжаем обработку следующих строк
+                }
+                if (length > 1024) {
+                    throw new LineTooLongException("Обнаружена строка № " + totalLines + " длиной " + length +
+                            " символов, что превышает максимально допустимую длину 1024 символа. Работа приложения будет завершена.");
+                }
+                    /*  if (length > maxLength) {
+                    maxLength = length;
+                }
+                if (length < minLength) {
+                    minLength = length;
+                }*/
+
+            }
+
+
+            if (totalLines > 0) {
+                System.out.println("Общее количество строк в файле: " + totalLines);
+                System.out.println("Доля запросов от Googlebot к веб-сайту относительно общего числа сделанных запросов: " + String.format("%.2f", (double) googleBotCount / totalLines * 100) + "%");
+                System.out.println("Доля запросов от YandexBot к веб-сайту относительно общего числа сделанных запросов: " + String.format("%.2f", (double) yandexBotCount / totalLines * 100) + "%");
+                                     /* "%.2f" — это форматная строка:
+                                     % — начало спецификатора формата.
+                                    .2 — округление до 2 знаков после запятой.
+                                     f — тип данных: число с плавающей точкой (float/double).*/
+
+             /* System.out.println("Длина самой длинной строки: " + maxLength);
+                System.out.println("Длина самой короткой строки: " + minLength);*/
+            } else {
+                System.out.println("Файл пуст");
+            }
+        }
+    }
+}
