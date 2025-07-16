@@ -1,5 +1,6 @@
 import java.io.File;
 import java.util.Scanner;
+import java.util.List;
 import Exceptions.*;
 
 public class Main {
@@ -26,13 +27,33 @@ public class Main {
             }
 
             try {
-                ProcessFile.processFile(path);
-            }
-            catch (LineTooLongException ex) {
+                // 1. Читаем файл и получаем список LogEntry
+                List<LogEntry> entries = LogFileParser.processFile(path);
+
+                // 2. Обрабатываем каждую запись
+                for (LogEntry entry : entries) {
+                    // Здесь можно делать что-то с каждой записью
+                    System.out.println("Обработанная запись: " + entry);
+/*
+                    // Или выводить отдельные поля:
+                    System.out.printf("IP: %s, Method: %s, URL: %s%n",
+                            entry.getIpAddress(),
+                            entry.getReqMethod(),
+                            entry.getReqURL());
+
+ */
+                }
+
+                System.out.println("Всего обработано записей: " + entries.size());
+
+            } catch (LineTooLongException ex) {
                 System.out.println(ex.getMessage());
                 break;
-            }
-            catch (Exception ex) {
+            } catch (InvalidLogFormatException ex) {
+                System.out.println("Ошибка формата лога: " + ex.getMessage());
+                // Можно продолжить для следующего файла вместо break
+                continue;
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 break;
             }
