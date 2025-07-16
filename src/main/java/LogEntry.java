@@ -44,35 +44,35 @@ public class LogEntry {
             String timeStr = logLine.substring(timeStart, timeEnd);
             parsedTime = parseDateTime(timeStr); // Используем вспомогательный метод
 
-// 3. HTTP-запрос (исправленная версия)
+            // 3. HTTP-запрос
             int requestStart = logLine.indexOf("\"") + 1;
             int requestEnd = logLine.indexOf("\"", requestStart);
             String request = logLine.substring(requestStart, requestEnd);
 
-// Извлекаем метод (первое слово до пробела)
+            // Извлекаем метод (первое слово до пробела)
             int firstSpace = request.indexOf(' ');
             if (firstSpace == -1) {
                 throw new IllegalArgumentException("Invalid HTTP request format");
             }
             parsedMethod = Methods.valueOf(request.substring(0, firstSpace));
 
-// Извлекаем URL (всё между методом и HTTP/версией)
+            // Извлекаем URL (всё между методом и HTTP/версией)
             int lastSpace = request.lastIndexOf(' ');
             if (lastSpace <= firstSpace) {
                 throw new IllegalArgumentException("Invalid HTTP request format");
             }
             parsedPath = request.substring(firstSpace + 1, lastSpace);
 
-// 4. Код статуса и размер ответа
+            // 4. Код статуса и размер ответа
             String tail = logLine.substring(requestEnd + 1).trim();
             String[] tailParts = tail.split("\""); // Разбиваем по кавычкам
 
-// Статус и размер - часть перед кавычками Referer
+            // Статус и размер - часть перед кавычками Referer
             String statusSizePart = tailParts[0].trim();
             int firstSpaceIdx = statusSizePart.indexOf(' ');
             int lastSpaceIdx = statusSizePart.lastIndexOf(' ');
 
-// Проверяем наличие пробелов
+            // Проверяем наличие пробелов
             if (firstSpaceIdx == -1 || lastSpaceIdx == -1) {
                 throw new IllegalArgumentException("Missing status or size");
             }
@@ -80,7 +80,7 @@ public class LogEntry {
             parsedStatus = Integer.parseInt(statusSizePart.substring(0, firstSpaceIdx));
             parsedSize = Long.parseLong(statusSizePart.substring(lastSpaceIdx + 1));
 
-// 5. Referer и User-Agent
+            // 5. Referer и User-Agent
             String refererPart = "";
             String agentPart = "";
 
