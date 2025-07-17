@@ -1,8 +1,9 @@
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Locale;
 
-//C:\Users\lfridlikh\Desktop\test_automatiozation\HW\short_access.log
+///C:\Users\lfridlikh\Desktop\test_automatiozation\HW\short_access.log
 public class LogEntry {
     private final String ipAddress;
     private final LocalDateTime timestamp;
@@ -129,7 +130,7 @@ public class LogEntry {
     private LocalDateTime parseDateTime(String dateTimeStr) {
         // Удаляем пробел между временем и часовым поясом
         String normalized = dateTimeStr.replaceFirst(" (\\+|-)", "$1");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ssZ");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ssZ", Locale.ENGLISH);
         try {
             return LocalDateTime.parse(normalized, formatter);
         } catch (DateTimeParseException e) {
