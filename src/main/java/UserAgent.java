@@ -19,7 +19,7 @@ public class UserAgent {
             this.oS = parsedOs;
         }
         catch (Exception e) {
-            throw new IllegalArgumentException("Failed to parse UserAgent: " + getUserAgent, e);
+            throw new IllegalArgumentException("Invalid UserAgent format: " + getUserAgent, e);
         }
     }
     ///////////ГЕТТЕРЫ////////////////////////////

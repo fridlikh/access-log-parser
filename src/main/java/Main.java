@@ -45,10 +45,14 @@ public class Main {
                     //вызов UserAgent
                     String userAgentStr = entry.getUserAgent(); //Получает строку User-Agent из объекта LogEntry entry — это объект класса LogEntry, который уже содержит разобранные данные из строки лога. getUserAgent() — это метод, который возвращает строку User-Agent (если она есть)
                     if (userAgentStr != null) {
-                        UserAgent userAgent = new UserAgent(userAgentStr); // Создаёт новый объект класса UserAgent
-                        System.out.printf("Browser: %s%nOS: %s%n",
-                                userAgent.getBrowser(),
-                                userAgent.getOs());
+                        try {
+                            UserAgent userAgent = new UserAgent(userAgentStr); // Создаёт новый объект класса UserAgent
+                            System.out.printf("Browser: %s%nOS: %s%n",
+                                    userAgent.getBrowser(),
+                                    userAgent.getOs());
+                        } catch (IllegalArgumentException e) {
+                            System.err.println("⚠ Пропущен некорректный UserAgent: " + e.getMessage());
+                        }
                     }
 
                     // Или выводить отдельные поля:

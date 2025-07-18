@@ -4,6 +4,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
 ///C:\Users\lfridlikh\Desktop\test_automatiozation\HW\short_access.log
+///C:\Users\lfridlikh\Desktop\test_automatiozation\HW\access.log
 public class LogEntry {
     private final String ipAddress;
     private final LocalDateTime timestamp;
