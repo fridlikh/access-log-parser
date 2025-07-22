@@ -75,6 +75,11 @@ public class Main {
                 System.out.println("Период данных: с " + stats.getMinTime() + " по " + stats.getMaxTime());
                 System.out.printf("Средний трафик в час: %.2f байт/час%n", stats.getTrafficRate());
                 System.out.println("Всего обработано строк: " + entries.size());
+                System.out.println("//////////////////////////////////////////////////////////////////////");
+                System.out.println(stats.getSimpleOsStatistics());
+                System.out.println("//////////////////////////////////////////////////////////////////////");
+                System.out.println(stats.getUniqURLs());
+
 
          /*   } catch (LineTooLongException ex) {
                 System.out.println(ex.getMessage());
