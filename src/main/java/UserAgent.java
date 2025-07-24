@@ -2,75 +2,102 @@ public class UserAgent {
     private final String oS;
     private final String browser;
 
-    public UserAgent(String getUserAgent) {
-        try {
-            this.browser = parseBrowser(getUserAgent);
-            this.oS = parseOS(getUserAgent);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid UserAgent format: " + getUserAgent, e);
-        }
+    public UserAgent(String userAgent) {
+        this.browser = parseBrowser(userAgent);
+        this.oS = parseOS(userAgent);
     }
 
     private String parseBrowser(String userAgent) {
-        // Удаляем всё после версии браузера
+        if (userAgent == null || userAgent.isBlank()) {
+            return "Unknown";
+        }
+
         String cleaned = userAgent.split("[/;]")[0].trim();
 
-        // Нормализуем названия популярных браузеров
-        if (cleaned.contains("Firefox")) return "Firefox";
-        if (cleaned.contains("Chrome")) return "Chrome";
-        if (cleaned.contains("Safari")) return "Safari";
-        if (cleaned.contains("Edge")) return "Edge";
-        if (cleaned.contains("Opera")) return "Opera";
-        if (cleaned.contains("MSIE") || cleaned.contains("Trident")) return "Internet Explorer";
+        // Основные браузеры
+        if (containsAnyIgnoreCase(userAgent, "Firefox")) return "Firefox";
+        if (containsAnyIgnoreCase(userAgent, "Chrome")) return "Chrome";
+        if (containsAnyIgnoreCase(userAgent, "Safari")) return "Safari";
+        if (containsAnyIgnoreCase(userAgent, "Edge")) return "Edge";
+        if (containsAnyIgnoreCase(userAgent, "Opera")) return "Opera";
+        if (containsAnyIgnoreCase(userAgent, "MSIE", "Trident")) return "Internet Explorer";
+        if (containsAnyIgnoreCase(userAgent, "Yandex")) return "Yandex";
 
-        // Обработка ботов
+        // Мобильные приложения
+        if (containsAnyIgnoreCase(userAgent, "WhatsApp")) return "WhatsApp";
+        if (containsAnyIgnoreCase(userAgent, "Instagram")) return "Instagram";
+        if (containsAnyIgnoreCase(userAgent, "Outlook")) return "Outlook";
+        if (containsAnyIgnoreCase(userAgent, "Telegram")) return "Telegram";
+
+        // Боты
         if (isBot(userAgent)) return "Bot";
 
         return cleaned.isEmpty() ? "Unknown" : cleaned;
     }
 
     private String parseOS(String userAgent) {
-        // Основные ОС
-        if (userAgent.contains("Windows NT 10.0")) return "Windows 10";
-        if (userAgent.contains("Windows NT 6.3")) return "Windows 8.1";
-        if (userAgent.contains("Windows NT 6.2")) return "Windows 8";
-        if (userAgent.contains("Windows NT 6.1")) return "Windows 7";
-        if (userAgent.contains("Windows NT 6.0")) return "Windows Vista";
-        if (userAgent.contains("Windows NT 5.1")) return "Windows XP";
-        if (userAgent.contains("Mac OS X")) return "Mac OS X";
-        if (userAgent.contains("iPhone") || userAgent.contains("iPad")) return "iOS";
-        if (userAgent.contains("Android")) return "Android";
-        if (userAgent.contains("Linux")) return "Linux";
+        if (userAgent == null || userAgent.isBlank()) {
+            return "Unknown";
+        }
 
-        // Виртуальные машины, облака и т.п.
-        if (userAgent.contains("Cloud")) return "Cloud Service";
-        if (userAgent.contains("Java")) return "Java VM";
-        if (userAgent.contains("Dalvik")) return "Android Runtime";
+        // Windows
+        if (containsAnyIgnoreCase(userAgent, "Windows NT 10.0")) return "Windows 10";
+        if (containsAnyIgnoreCase(userAgent, "Windows NT 6.3")) return "Windows 8.1";
+        if (containsAnyIgnoreCase(userAgent, "Windows NT 6.2")) return "Windows 8";
+        if (containsAnyIgnoreCase(userAgent, "Windows NT 6.1")) return "Windows 7";
+        if (containsAnyIgnoreCase(userAgent, "Windows NT 6.0")) return "Windows Vista";
+        if (containsAnyIgnoreCase(userAgent, "Windows NT 5.1")) return "Windows XP";
 
-        // Боты и краулеры
+        // Другие ОС
+        if (containsAnyIgnoreCase(userAgent, "Mac OS X")) return "Mac OS X";
+        if (containsAnyIgnoreCase(userAgent, "iPhone", "iPad")) return "iOS";
+        if (containsAnyIgnoreCase(userAgent, "Android")) return "Android";
+        if (containsAnyIgnoreCase(userAgent, "Linux")) return "Linux";
+
+        // Боты
         if (isBot(userAgent)) return "Bot";
 
-        // Если ничего не найдено
         return "Other";
     }
 
     private boolean isBot(String userAgent) {
+        if (userAgent == null || userAgent.isBlank()) {
+            return false;
+        }
+
         String lower = userAgent.toLowerCase();
+
+        // Явные признаки ботов
         return lower.contains("bot") ||
                 lower.contains("crawler") ||
                 lower.contains("spider") ||
-                lower.contains("fetcher") ||
                 lower.contains("scraper") ||
-                lower.contains("parser") ||
-                lower.contains("monitoring") ||
                 lower.contains("http://") ||
                 lower.contains("https://") ||
                 lower.contains("+http") ||
-                lower.contains("feed") ||
-                lower.contains("rss") ||
-                lower.contains("api");
+                (!lower.contains("mozilla") &&
+                        !lower.contains("chrome") &&
+                        !lower.contains("safari") &&
+                        !lower.contains("opera") &&
+                        !lower.contains("edge") &&
+                        !lower.contains("firefox"));
     }
 
-    public String getOs() { return oS; }
-    public String getBrowser() { return browser; }
+    private boolean containsAnyIgnoreCase(String source, String... targets) {
+        String lowerSource = source.toLowerCase();
+        for (String target : targets) {
+            if (lowerSource.contains(target.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String getOs() {
+        return oS;
+    }
+
+    public String getBrowser() {
+        return browser;
+    }
 }

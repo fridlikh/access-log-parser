@@ -3,13 +3,16 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class Statistics {
     private double totalTraffic;
     private LocalDateTime minTime;
     private LocalDateTime maxTime;
-    private HashSet<String> uniqURLs = new HashSet<>(); //HashSet - это реализация интерфейса Set из стандартной библиотеки Java (java.util). Хранит уникальные элементы (дубликаты запрещены). Порядок элементов не гарантируется (может меняться при добавлении/удалении).
-    private HashMap<String, Integer> osCounts = new HashMap<>(); // Новая переменная для подсчета ОС
+    private Set<String> uniqURLs = new HashSet<>(); //HashSet - это реализация интерфейса Set из стандартной библиотеки Java (java.util). Хранит уникальные элементы (дубликаты запрещены). Порядок элементов не гарантируется (может меняться при добавлении/удалении).
+    private Set<String> notFoundURLs = new HashSet<>();
+    private Map<String, Integer> osCounts = new HashMap<>(); // Новая переменная для подсчета ОС
+    private Map<String, Integer> browserCounts = new HashMap<>();
 
     public void addEntry(LogEntry entry) {
         totalTraffic += entry.getBytesSent();
@@ -24,6 +27,10 @@ public class Statistics {
         // Сохраняем уникальные урлы в список
         if (entry.getRespCode() == 200) {
             uniqURLs.add(entry.getReqURL());
+        }
+        // Сохраняем битые урлы в список
+        if (entry.getRespCode() == 404) {
+            notFoundURLs.add(entry.getReqURL());
         }
 
         // Добавляем подсчет ОС
@@ -40,11 +47,19 @@ public class Statistics {
         } catch (IllegalArgumentException e) {
             System.err.println("Invalid UserAgent: " + e.getMessage());
         }
+
+        try {
+            UserAgent userAgent = new UserAgent(entry.getUserAgent()); // Создаем экземпляр
+            String browserName = userAgent.getBrowser();
+            browserCounts.put(browserName, browserCounts.getOrDefault(browserName, 0) + 1); //Все аналогично блоку ОС, но для браузеров
+        } catch (IllegalArgumentException e) {
+            System.err.println("Invalid UserAgent: " + e.getMessage());
+        }
     }
 
-        public Map<String, Double> getOsStatistics () {
-            Map<String, Double> osStats = new HashMap<>(); // Создаём пустую HashMap, где: Ключ (String) - название операционной системы. Значение (Double) - доля этой ОС от общего количества (от 0 до 1)
-            int total = osCounts.values().stream().mapToInt(Integer::intValue).sum();
+    public Map<String, Double> getOsStatistics() {
+        Map<String, Double> osStats = new HashMap<>(); // Создаём пустую HashMap, где: Ключ (String) - название операционной системы. Значение (Double) - доля этой ОС от общего количества (от 0 до 1)
+        int totalOS = osCounts.values().stream().mapToInt(Integer::intValue).sum();
 /*
 osCounts.values() - получаем коллекцию всех значений из мапы osCounts (это количества для каждой ОС)
 .stream() - преобразуем в поток (Stream API)
@@ -53,10 +68,10 @@ osCounts.values() - получаем коллекцию всех значени�
 .sum() - суммируем все значения
 Итог: в total получаем общее количество всех записей об ОС.
  */
-            if (total > 0) { // Избегаем деления на ноль
-                osCounts.forEach((os, count) ->
-                        osStats.put(os, (double) count / total)
-                );
+        if (totalOS > 0) { // Избегаем деления на ноль
+            osCounts.forEach((os, count) ->
+                    osStats.put(os, (double) count / totalOS)
+            );
             /*
             osCounts.forEach - перебираем все пары (ОС → количество) в исходной мапе
             Для каждой пары:
@@ -67,10 +82,23 @@ osCounts.values() - получаем коллекцию всех значени�
             (double) - явное приведение к double, чтобы было дробное деление
             count / total - делим количество конкретной ОС на общее количество
              */
-            }
-
-            return osStats;
         }
+
+        return osStats;
+    }
+
+    // Тут всё аналогично как для ОС, но для браузеров
+    public Map<String, Double> getBrowserStatistics() {
+        Map<String, Double> browserStats = new HashMap<>();
+        int totalBrowser = browserCounts.values().stream().mapToInt(Integer::intValue).sum();
+
+        if (totalBrowser > 0) { // Избегаем деления на ноль
+            browserCounts.forEach((os, count) ->
+                    browserStats.put(os, (double) count / totalBrowser)
+            );
+        }
+        return browserStats;
+    }
 
     public String getSimpleOsStatistics() {
         Map<String, Double> osStats = getOsStatistics();
@@ -82,43 +110,65 @@ osCounts.values() - получаем коллекцию всех значени�
         result.append("OS Statistics:\n");
 
         for (Map.Entry<String, Double> entry : osStats.entrySet()) {
-            // Форматируем процент с 2 знаками после запятой
-            String percent = String.format("%.2f%%", entry.getValue() * 100);
+            // Форматируем процент с 4 знаками после запятой
+            String percent = String.format("%.4f%%", entry.getValue() * 100);
             result.append(entry.getKey()).append(": ").append(percent).append("\n");
         }
 
         return result.toString();
     }
 
-        public double getTrafficRate () {
-            // Вычисляем продолжительность между minTime и maxTime
-            Duration duration = Duration.between(minTime, maxTime);
-
-            // Преобразуем в часы (с дробной частью)
-            double hours = duration.toMillis() / (1000.0 * 60 * 60);
-
-            // Избегаем деления на ноль (если все записи имеют одинаковое время)
-            if (hours == 0) {
-                return totalTraffic; // Все запросы были в один момент времени
-            }
-
-            // Возвращаем средний объем трафика в час
-            return totalTraffic / hours;
+    public String getSimpleBrowserStatistics() {
+        Map<String, Double> browserStats = getBrowserStatistics();
+        if (browserStats.isEmpty()) {
+            return "No browser statistics available";
         }
 
-        public double getTotalTraffic () {
-            return totalTraffic;
+        StringBuilder result = new StringBuilder();
+        result.append("Browser Statistics:\n");
+
+        for (Map.Entry<String, Double> entry : browserStats.entrySet()) {
+            // Форматируем процент с 4 знаками после запятой
+            String percent = String.format("%.4f%%", entry.getValue() * 100);
+            result.append(entry.getKey()).append(": ").append(percent).append("\n");
         }
 
-        public LocalDateTime getMinTime () {
-            return minTime;
-        }
-
-        public LocalDateTime getMaxTime () {
-            return maxTime;
-        }
-
-        public HashSet<String> getUniqURLs () {
-            return new HashSet<>(uniqURLs); // Защитная копия
-        }
+        return result.toString();
     }
+
+    public double getTrafficRate() {
+        // Вычисляем продолжительность между minTime и maxTime
+        Duration duration = Duration.between(minTime, maxTime);
+
+        // Преобразуем в часы (с дробной частью)
+        double hours = duration.toMillis() / (1000.0 * 60 * 60);
+
+        // Избегаем деления на ноль (если все записи имеют одинаковое время)
+        if (hours == 0) {
+            return totalTraffic; // Все запросы были в один момент времени
+        }
+
+        // Возвращаем средний объем трафика в час
+        return totalTraffic / hours;
+    }
+
+    public double getTotalTraffic() {
+        return totalTraffic;
+    }
+
+    public LocalDateTime getMinTime() {
+        return minTime;
+    }
+
+    public LocalDateTime getMaxTime() {
+        return maxTime;
+    }
+
+    public HashSet<String> getUniqURLs() {
+        return new HashSet<>(uniqURLs); // Защитная копия
+    }
+
+    public HashSet<String> getnotFoundURLs() {
+        return new HashSet<>(notFoundURLs); // Защитная копия
+    }
+}
